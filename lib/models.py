@@ -2,6 +2,8 @@
 
 import pymc as pm
 
+import numpy as np
+
 # TODO(makinzm): I think priors should be a class, not a dict to make type hinting easier.
 def create_ar_model(n_chains: int, priors: dict, n_steps: int, data_len: int) -> pm.Model:
     """
@@ -32,7 +34,11 @@ def create_ar_model(n_chains: int, priors: dict, n_steps: int, data_len: int) ->
         elif priors["coefs"]["distribution"] == "normal":
             coefs = pm.Normal("coefs", mu=priors["coefs"]["mu"], sigma=priors["coefs"]["sigma"], shape=n_chains + 1)
         sigma = pm.HalfNormal("sigma", sigma=priors["sigma"])
-        data = pm.AR(f"AR({n_chains})", coefs, sigma, constant=True, steps=data_len - n_chains)
+        # データ変数を明示的に定義
+        data = pm.MutableData('data', np.zeros(data_len))  # 初期値として0を設定
+        
+        # AR モデルの定義
+        ar_process = pm.AR(f"AR({n_chains})", coefs, sigma, constant=True, observed=data)
 
     return model
 
